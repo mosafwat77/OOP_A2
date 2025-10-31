@@ -1,4 +1,4 @@
-﻿#include "PlayerGui.h"
+#include "PlayerGui.h"
 
 PlayerGui::PlayerGui()
     : thumbnailCache(5),
@@ -17,58 +17,64 @@ PlayerGui::PlayerGui()
     {
         addAndMakeVisible(*btn);
         btn->addListener(this);
+       
+    }
 
-    }
-    for (auto* label : { &speedLabel })
-    {
-        label->setJustificationType(juce::Justification::centredLeft);
-        label->setColour(juce::Label::textColourId, juce::Colours::white);
-        addAndMakeVisible(label);
-    }
     // Volume slider
     volumeSlider.setRange(0.0, 1.0, 0.01);
     volumeSlider.setValue(0.5);
     volumeSlider.addListener(this);
     addAndMakeVisible(volumeSlider);
+    
+
+    // Speed slider
+    speedSlider.setRange(0.5, 2.0, 0.01);
+    speedSlider.setValue(1.0);
+    speedSlider.setTextValueSuffix("x");
+    speedSlider.addListener(this);
+    addAndMakeVisible(speedSlider);
+    
+
+ 
+    positionSlider.setRange(0.0, 1.0, 0.01);
+    positionSlider.setValue(0.0);
+    
+    positionSlider.setSliderStyle(juce::Slider::LinearBar);
+    positionSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    positionSlider.addListener(this);
+     addAndMakeVisible(positionSlider);
+    
 
     // Timer for updating playhead
     startTimerHz(30);
-
-    speedSlider.setRange(0.5, 2.0);
-    speedSlider.setValue(1.0);
-    speedLabel.setText("Speed", juce::dontSendNotification);
-    speedSlider.addListener(this);
-
-
 }
 
-PlayerGui::~PlayerGui() {
-    speedSlider.removeListener(this);
-}
+PlayerGui::~PlayerGui() {}
 
 void PlayerGui::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::darkgrey);
 
-    auto waveformArea = getLocalBounds().reduced(20, 120);
+    auto waveformArea = getLocalBounds().reduced(20, 160);
 
     if (fileLoaded && thumbnail.getNumChannels() > 0)
     {
+        
         g.setColour(juce::Colours::lightgreen);
         thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 0.3f);
 
-        // Playhead line
+        
         double duration = playerAudio.getTrackDuration();
-        double position = playerAudio.getPlaybackTime();
-
         if (duration > 0.0)
         {
-            double progress = position / duration;
-            int playheadX = waveformArea.getX() + (int)(progress * waveformArea.getWidth());
+            double currentPos = playerAudio.getPlaybackTime(); 
+            double xPos = juce::jmap(currentPos, 0.0, duration,
+                (double)waveformArea.getX(),
+                (double)waveformArea.getRight());
 
             g.setColour(juce::Colours::red);
-            g.drawLine((float)playheadX, (float)waveformArea.getY(),
-                (float)playheadX, (float)waveformArea.getBottom(), 2.0f);
+            g.drawLine((float)xPos, (float)waveformArea.getY(),
+                (float)xPos, (float)waveformArea.getBottom(), 2.0f);
         }
     }
     else
@@ -79,14 +85,13 @@ void PlayerGui::paint(juce::Graphics& g)
     }
 }
 
+
 void PlayerGui::resized()
 {
     int y = 20;
     int x = 20;
     int w = 80;
     int gap = 10;
-    auto area = getLocalBounds().reduced(20);
-    int sliderHeight = 36;
 
     loadButton.setBounds(x, y, w, 40);
     playPauseButton.setBounds(x += w + gap, y, w, 40);
@@ -96,7 +101,19 @@ void PlayerGui::resized()
     loopButton.setBounds(x += w + gap, y, w, 40);
 
     volumeSlider.setBounds(20, 80, getWidth() - 40, 30);
-    speedSlider.setBounds(100, area.getY() - 10, getWidth() - 120, sliderHeight);
+    speedSlider.setBounds(20, 120, getWidth() - 40, 30);
+
+    
+    auto waveformArea = getLocalBounds().reduced(20, 160);
+
+    
+    const int sliderHeight = 5;
+    positionSlider.setBounds(
+        waveformArea.getX(),
+        waveformArea.getCentreY() - sliderHeight / 2,
+        waveformArea.getWidth(),
+        sliderHeight
+    );
 }
 
 void PlayerGui::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
@@ -128,7 +145,7 @@ void PlayerGui::buttonClicked(juce::Button* button)
                 auto file = chooser.getResult();
                 if (file.existsAsFile())
                 {
-                    thumbnail.clear(); // امسح القديم قبل تحميل الجديد
+                    thumbnail.clear();
                     playerAudio.loadFile(file);
                     thumbnail.setSource(new juce::FileInputSource(file));
                     fileLoaded = true;
@@ -185,12 +202,27 @@ void PlayerGui::buttonClicked(juce::Button* button)
 void PlayerGui::sliderValueChanged(juce::Slider* slider)
 {
     if (slider == &volumeSlider)
-        playerAudio.setGain((float)slider->getValue()); 
-
+        playerAudio.setGain((float)slider->getValue());
+    else if (slider == &speedSlider)
+        playerAudio.setSpeed((float)slider->getValue());
+    else if (slider == &positionSlider)
+        playerAudio.setPosition(slider->getValue());
 }
 
 void PlayerGui::timerCallback()
 {
-    if (fileLoaded && playerAudio.isPlaying())
-        repaint();
+    if (fileLoaded)
+    {
+        
+        double duration = playerAudio.getTrackDuration();
+
+        if (duration > 0.0 && !positionSlider.isMouseButtonDown())
+        {
+            positionSlider.setRange(0.0, duration, 0.01);
+            positionSlider.setValue(playerAudio.getPlaybackTime(), juce::dontSendNotification);
+        }
+
+        if (playerAudio.isPlaying())
+            repaint();
+    }
 }
