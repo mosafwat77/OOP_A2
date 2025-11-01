@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <JuceHeader.h>
 #include "Playeraudio.h"
 
@@ -31,6 +31,7 @@ private:
     juce::TextButton loopButton{ "Loop: OFF" };
 
     juce::Slider volumeSlider;
+	juce::Slider positionSlider;
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::AudioThumbnailCache thumbnailCache;
