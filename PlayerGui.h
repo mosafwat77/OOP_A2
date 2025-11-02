@@ -41,7 +41,10 @@ private:
     juce::TextButton loopStartButton{ "A" };
     juce::TextButton loopEndButton{ "B" };
     juce::TextButton clearLoopButton{ "Clear Loop" };
- 
+    juce::TextButton forwardButton{ "|> " };
+    juce::TextButton backwardButton{ "|< " };
+
+
     juce::Slider volumeSlider;
     juce::Slider speedSlider;
     juce::Slider positionSlider;
