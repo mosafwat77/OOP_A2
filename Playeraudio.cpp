@@ -1,6 +1,7 @@
 #include "Playeraudio.h"
 
-Playeraudio::Playeraudio()
+Playeraudio::Playeraudio() : resampleSource(&transportSource, false, 2)
+  
 {
     formatManager.registerBasicFormats();
     transportSource.setGain(1.0f);
@@ -13,18 +14,22 @@ Playeraudio::~Playeraudio()
 
 void Playeraudio::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
+    resampleSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
     transportSource.setLooping(isLooping);
 }
 
 void Playeraudio::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    transportSource.getNextAudioBlock(bufferToFill);
+    resampleSource.getNextAudioBlock(bufferToFill);
+
 }
 
 void Playeraudio::releaseResources()
 {
+    resampleSource.releaseResources();
     transportSource.releaseResources();
+
 }
 
 void Playeraudio::loadFile(const juce::File& audioFile)
@@ -41,8 +46,8 @@ void Playeraudio::loadFile(const juce::File& audioFile)
         {
             transportSource.setSource(readerSource.get(),
                 0,
-                nullptr, 
-                r->sampleRate); 
+                nullptr,
+                r->sampleRate);
         }
 
         transportSource.setLooping(isLooping);
@@ -153,5 +158,5 @@ double Playeraudio::getTrackDuration() const
 
 void Playeraudio::setSpeed(double ratio)
 {
-    
+    resampleSource.setResamplingRatio(ratio);
 }
