@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <JuceHeader.h>
 
 class Playeraudio
@@ -40,14 +40,10 @@ public:
 
     void setSpeed(double ratio);
 
-
-
 private:
     juce::AudioFormatManager formatManager;
     juce::AudioTransportSource transportSource;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
-    std::unique_ptr<juce::ResamplingAudioSource> resampleSource;
-
 
     bool muted = false;
     bool isLooping = false;
