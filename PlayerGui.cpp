@@ -13,7 +13,13 @@ PlayerGui::PlayerGui()
     addAndMakeVisible(loopStartButton);
     addAndMakeVisible(loopEndButton);
     addAndMakeVisible(clearLoopButton);
-   
+    addAndMakeVisible(forwardButton);
+    addAndMakeVisible(backwardButton);
+
+    forwardButton.addListener(this);
+    backwardButton.addListener(this);
+
+
     loadButton.setButtonText("Load");
     playPauseButton.setButtonText("Play");
     stopButton.setButtonText("Stop");
@@ -22,11 +28,11 @@ PlayerGui::PlayerGui()
     loopButton.setButtonText("Loop: OFF");
     loopStartButton.setButtonText("Set A");
     loopEndButton.setButtonText("Set B");
-    clearLoopButton.setButtonText("Clear Loop"); 
+    clearLoopButton.setButtonText("Clear Loop");
 
     for (auto* btn : { &loadButton, &playPauseButton, &stopButton, &restartButton,
                       &muteButton, &loopButton, &loopStartButton, &loopEndButton, &clearLoopButton
-     
+
         })
     {
         btn->addListener(this);
@@ -76,8 +82,8 @@ void PlayerGui::paint(juce::Graphics& g)
     {
         const juce::SpinLock::ScopedLockType lock(thumbnailLock);
 
-        g.setColour(juce::Colours::lightgreen);
-        thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 0.3f);
+        g.setColour(juce::Colours::lightblue);
+        thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 0.6f);
         if (loopStartSet && loopEndSet && abLoopEnabled)
         {
             double duration = playerAudio.getTrackDuration();
@@ -155,6 +161,9 @@ void PlayerGui::resized()
     restartButton.setBounds(x += w + gap, y, w, 40);
     muteButton.setBounds(x += w + gap, y, w, 40);
     loopButton.setBounds(x += w + gap, y, w, 40);
+    backwardButton.setBounds(x += w + gap, y, w, 40);
+    forwardButton.setBounds(x += w + gap, y, w, 40);
+
     y += 50;
     x = 20;
     loopStartButton.setBounds(x, y, w, 40);
@@ -166,7 +175,7 @@ void PlayerGui::resized()
     speedLabel.setBounds(20, 160, 60, 30);
     speedSlider.setBounds(90, 160, getWidth() - 110, 30);
 
-    auto waveformArea = getLocalBounds().reduced(20, 250); 
+    auto waveformArea = getLocalBounds().reduced(20, 250);
 
     int sliderHeight = 25;
     int timeLabelHeight = 20;
@@ -208,7 +217,7 @@ void PlayerGui::setLoopStart()
     {
         abLoopEnabled = true;
         playerAudio.setLooping(true);
-   
+
     }
 
     repaint();
@@ -277,9 +286,9 @@ void PlayerGui::timerCallback()
         if (abLoopEnabled && loopStartSet && loopEndSet && currentTime >= loopEndTime)
         {
             playerAudio.setPosition(loopStartTime);
-            currentTime = loopStartTime; 
+            currentTime = loopStartTime;
         }
-     
+
         if (!positionSlider.isMouseButtonDown() && duration > 0.0)
         {
             positionSlider.setRange(0.0, duration, 0.01);
@@ -312,7 +321,7 @@ void PlayerGui::buttonClicked(juce::Button* button)
                     playerAudio.loadFile(file);
                     thumbnail.setSource(new juce::FileInputSource(file));
                     fileLoaded = true;
-                    clearLoopMarkers();          
+                    clearLoopMarkers();
                     playPauseButton.setButtonText("Play");
 
                     double duration = playerAudio.getTrackDuration();
@@ -392,7 +401,16 @@ void PlayerGui::buttonClicked(juce::Button* button)
     else if (button == &clearLoopButton)
     {
         clearLoopMarkers();
+    } 
+    else if (button == &forwardButton)
+    {
+        playerAudio.increment(10.0);
     }
+    else if (button == &backwardButton)
+    {
+        playerAudio.decrement(10.0); 
+    }
+
 }
 
 void PlayerGui::sliderValueChanged(juce::Slider* slider)
