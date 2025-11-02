@@ -1,8 +1,9 @@
 #pragma once
+
 #include <JuceHeader.h>
 #include "Playeraudio.h"
 
-class PlayerGui : public juce::Component,
+class PlayerGui : public juce::AudioAppComponent,
     public juce::Button::Listener,
     public juce::Slider::Listener,
     public juce::Timer
@@ -11,44 +12,56 @@ public:
     PlayerGui();
     ~PlayerGui() override;
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
 
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate);
-    void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill);
-    void releaseResources();
-
-    void timerCallback() override;
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
+    void releaseResources() override;
 
 private:
+    void buttonClicked(juce::Button* button) override;
+    void sliderValueChanged(juce::Slider* slider) override;
+    void timerCallback() override;
+
+    juce::String formatTime(double seconds);
+
+    void setLoopStart();
+    void setLoopEnd();
+    void clearLoopMarkers();
+
     Playeraudio playerAudio;
 
-    juce::TextButton loadButton{ "Load" };
-    juce::TextButton playPauseButton{ "Play" };
-    juce::TextButton stopButton{ "Stop" };
-    juce::TextButton restartButton{ "Restart" };
-    juce::TextButton muteButton{ "Mute" };
-    juce::TextButton loopButton{ "Loop: OFF" };
-
+    juce::TextButton loadButton;
+    juce::TextButton playPauseButton;
+    juce::TextButton stopButton;
+    juce::TextButton restartButton;
+    juce::TextButton muteButton;
+    juce::TextButton loopButton;
+    juce::TextButton loopStartButton{ "A" };
+    juce::TextButton loopEndButton{ "B" };
+    juce::TextButton clearLoopButton{ "Clear Loop" };
+ 
     juce::Slider volumeSlider;
-    juce::Slider positionSlider;
     juce::Slider speedSlider;
+    juce::Slider positionSlider;
 
     juce::Label currentTimeLabel;
     juce::Label totalTimeLabel;
     juce::Label speedLabel;
 
-    std::unique_ptr<juce::FileChooser> fileChooser;
-
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
-
     juce::SpinLock thumbnailLock;
+
+    std::unique_ptr<juce::FileChooser> fileChooser;
     bool fileLoaded = false;
 
-    juce::String formatTime(double seconds);
-    void buttonClicked(juce::Button* button) override;
-    void sliderValueChanged(juce::Slider* slider) override;
+    double loopStartTime = 0.0;
+    double loopEndTime = 0.0;
+    bool loopStartSet = false;
+    bool loopEndSet = false;
+    bool abLoopEnabled = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PlayerGui)
 };
