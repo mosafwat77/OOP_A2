@@ -280,3 +280,4 @@ void PlayerGui::sliderValueChanged(juce::Slider* slider)
         playerAudio.setPosition(slider->getValue());
     }
 }
+
