@@ -31,15 +31,22 @@ private:
     juce::TextButton loopButton{ "Loop: OFF" };
 
     juce::Slider volumeSlider;
-	juce::Slider positionSlider;
+    juce::Slider positionSlider;
+    juce::Slider speedSlider;
+
+    juce::Label currentTimeLabel;
+    juce::Label totalTimeLabel;
+    juce::Label speedLabel;
+
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
-    juce::Label speedLabel;
-    juce::Slider speedSlider;
+
+    juce::SpinLock thumbnailLock;
     bool fileLoaded = false;
 
+    juce::String formatTime(double seconds);
     void buttonClicked(juce::Button* button) override;
     void sliderValueChanged(juce::Slider* slider) override;
 
