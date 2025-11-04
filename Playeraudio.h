@@ -16,7 +16,7 @@ public:
     void stop();
     void pause();
     void restart();
-    
+
     void setGain(float gain);
     void mute();
     void unmute();
