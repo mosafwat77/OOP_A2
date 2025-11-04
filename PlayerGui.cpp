@@ -77,8 +77,7 @@ PlayerGui::~PlayerGui()
 void PlayerGui::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::darkgrey);
-
-    auto waveformArea = getLocalBounds().withTrimmedTop(300).withTrimmedBottom(400);
+    auto waveformArea = getLocalBounds().withTrimmedTop(200).withTrimmedBottom(200);
 
     if (fileLoaded && thumbnail.getNumChannels() > 0)
     {
@@ -546,3 +545,4 @@ void PlayerGui::deleteKeyPressed(int lastRowSelected)
         repaint();
     }
 }
+
