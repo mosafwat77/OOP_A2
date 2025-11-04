@@ -77,15 +77,16 @@ PlayerGui::~PlayerGui()
 void PlayerGui::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::darkgrey);
+
     auto waveformArea = getLocalBounds().withTrimmedTop(200).withTrimmedBottom(200);
 
     if (fileLoaded && thumbnail.getNumChannels() > 0)
     {
         const juce::SpinLock::ScopedLockType lock(thumbnailLock);
 
-     
+
         g.setColour(juce::Colours::lightblue);
-        thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 1.0f);
+        thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 0.4f);
 
         if (loopStartSet && loopEndSet && abLoopEnabled)
         {
@@ -202,27 +203,27 @@ void PlayerGui::resized()
 
     positionSlider.setBounds(
         waveformArea.getX(),
-        waveformArea.getBottom() + 10,
+        waveformArea.getBottom() + 50,
         waveformArea.getWidth(),
         sliderHeight
     );
 
     currentTimeLabel.setBounds(
         waveformArea.getX(),
-        waveformArea.getBottom() + 10 + sliderHeight + 5,
+        waveformArea.getBottom() + 50 + sliderHeight + 5,
         60,
         timeLabelHeight
     );
 
     totalTimeLabel.setBounds(
         waveformArea.getRight() - 60,
-        waveformArea.getBottom() + 10 + sliderHeight + 5,
+        waveformArea.getBottom() + 50 + sliderHeight + 5,
         60,
         timeLabelHeight
     );
 
     int markersY = waveformArea.getBottom() + 10 + sliderHeight + timeLabelHeight + 5;
-    markerList.setBounds(20, markersY, getWidth() - 40, 150);
+    markerList.setBounds(20, markersY + 46, getWidth() - 40, 150);
 }
 
 void PlayerGui::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
@@ -245,7 +246,7 @@ void PlayerGui::buttonClicked(juce::Button* button)
     if (button == &loadButton)
     {
         fileChooser = std::make_unique<juce::FileChooser>(
-            "Select audio file...", juce::File{}, "*.wav;*.mp3;*.aiff;*.flac");
+            "Select audio file...", juce::File{}, ".wav;.mp3;.aiff;.flac");
 
         fileChooser->launchAsync(
             juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
@@ -545,4 +546,3 @@ void PlayerGui::deleteKeyPressed(int lastRowSelected)
         repaint();
     }
 }
-
