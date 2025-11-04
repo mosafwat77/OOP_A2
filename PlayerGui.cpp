@@ -4,6 +4,7 @@ PlayerGui::PlayerGui()
     : thumbnailCache(5),
     thumbnail(512, playerAudio.getFormatManager(), thumbnailCache)
 {
+  
     addAndMakeVisible(loadButton);
     addAndMakeVisible(playPauseButton);
     addAndMakeVisible(stopButton);
@@ -15,11 +16,12 @@ PlayerGui::PlayerGui()
     addAndMakeVisible(clearLoopButton);
     addAndMakeVisible(forwardButton);
     addAndMakeVisible(backwardButton);
+    addAndMakeVisible(addMarkerButton);
+    addAndMakeVisible(deleteMarkerButton);
+    addAndMakeVisible(markerListBox);
+    addAndMakeVisible(markerLabel);
 
-    forwardButton.addListener(this);
-    backwardButton.addListener(this);
-
-
+ 
     loadButton.setButtonText("Load");
     playPauseButton.setButtonText("Play");
     stopButton.setButtonText("Stop");
@@ -29,11 +31,15 @@ PlayerGui::PlayerGui()
     loopStartButton.setButtonText("Set A");
     loopEndButton.setButtonText("Set B");
     clearLoopButton.setButtonText("Clear Loop");
+    addMarkerButton.setButtonText("Add Marker");
+    deleteMarkerButton.setButtonText("Delete Marker");
 
+    markerLabel.setText("Track Markers:", juce::dontSendNotification);
+    markerLabel.setJustificationType(juce::Justification::left);
     for (auto* btn : { &loadButton, &playPauseButton, &stopButton, &restartButton,
-                      &muteButton, &loopButton, &loopStartButton, &loopEndButton, &clearLoopButton
-
-        })
+                      &muteButton, &loopButton, &loopStartButton, &loopEndButton,
+                      &clearLoopButton, &forwardButton, &backwardButton,
+                      &addMarkerButton, &deleteMarkerButton })
     {
         btn->addListener(this);
     }
@@ -49,7 +55,6 @@ PlayerGui::PlayerGui()
     speedSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 60, 20);
     speedSlider.addListener(this);
     addAndMakeVisible(speedSlider);
-
     positionSlider.setRange(0.0, 1.0, 0.001);
     positionSlider.setValue(0.0);
     positionSlider.setSliderStyle(juce::Slider::LinearBar);
@@ -66,11 +71,18 @@ PlayerGui::PlayerGui()
 
     speedLabel.setText("Speed:", juce::dontSendNotification);
     addAndMakeVisible(speedLabel);
+    markerListBox.setModel(this);
+    markerListBox.setRowHeight(25);
+    playerAudio.addChangeListener(this);
 
     startTimerHz(30);
 }
 
-PlayerGui::~PlayerGui() {}
+PlayerGui::~PlayerGui()
+{
+    markerListBox.setModel(nullptr);
+    playerAudio.removeChangeListener(this);
+}
 
 void PlayerGui::paint(juce::Graphics& g)
 {
@@ -84,6 +96,7 @@ void PlayerGui::paint(juce::Graphics& g)
 
         g.setColour(juce::Colours::lightblue);
         thumbnail.drawChannel(g, waveformArea, 0.0, thumbnail.getTotalLength(), 0, 0.6f);
+
         if (loopStartSet && loopEndSet && abLoopEnabled)
         {
             double duration = playerAudio.getTrackDuration();
@@ -99,7 +112,6 @@ void PlayerGui::paint(juce::Graphics& g)
                     (float)(loopEndX - loopStartX), (float)waveformArea.getHeight());
             }
         }
-
         double duration = playerAudio.getTrackDuration();
         if (duration > 0.0)
         {
@@ -112,6 +124,7 @@ void PlayerGui::paint(juce::Graphics& g)
             g.drawLine((float)xPos, (float)waveformArea.getY(),
                 (float)xPos, (float)waveformArea.getBottom(), 2.0f);
         }
+
         if (loopStartSet)
         {
             double duration = playerAudio.getTrackDuration();
@@ -125,7 +138,6 @@ void PlayerGui::paint(juce::Graphics& g)
                     (float)markerX, (float)waveformArea.getBottom(), 3.0f);
             }
         }
-
         if (loopEndSet)
         {
             double duration = playerAudio.getTrackDuration();
@@ -137,6 +149,25 @@ void PlayerGui::paint(juce::Graphics& g)
                 g.setColour(juce::Colours::orange);
                 g.drawLine((float)markerX, (float)waveformArea.getY(),
                     (float)markerX, (float)waveformArea.getBottom(), 3.0f);
+            }
+        }
+        const auto& markers = playerAudio.getMarkers();
+        if (duration > 0.0)
+        {
+            for (const auto& marker : markers)
+            {
+                if (marker.isLoopStart || marker.isLoopEnd)
+                    continue;
+
+                auto markerX = juce::jmap(marker.timestamp, 0.0, duration,
+                    (double)waveformArea.getX(), (double)waveformArea.getRight());
+
+                g.setColour(marker.colour);
+                g.drawLine((float)markerX, (float)waveformArea.getY(),
+                    (float)markerX, (float)waveformArea.getBottom(), 2.0f);
+
+                g.setColour(marker.colour);
+                g.fillEllipse((float)markerX - 4, (float)waveformArea.getY() - 8, 8, 8);
             }
         }
     }
@@ -170,10 +201,9 @@ void PlayerGui::resized()
     loopEndButton.setBounds(x += w + gap, y, w, 40);
     clearLoopButton.setBounds(x += w + gap, y, w + 20, 40);
 
-    volumeSlider.setBounds(20, 120, getWidth() - 40, 30);
-
+    volumeSlider.setBounds(20, 120, getWidth() - 350, 30);
     speedLabel.setBounds(20, 160, 60, 30);
-    speedSlider.setBounds(90, 160, getWidth() - 110, 30);
+    speedSlider.setBounds(90, 160, getWidth() - 350, 30);
 
     auto waveformArea = getLocalBounds().reduced(20, 250);
 
@@ -182,25 +212,33 @@ void PlayerGui::resized()
 
     positionSlider.setBounds(
         waveformArea.getX(),
-        waveformArea.getBottom() + 10,
+        waveformArea.getBottom() + 20,
         waveformArea.getWidth(),
         sliderHeight
     );
 
     currentTimeLabel.setBounds(
         waveformArea.getX(),
-        waveformArea.getBottom() + 10 + sliderHeight + 5,
+		waveformArea.getBottom() + 50 + sliderHeight + 5,  
         60,
         timeLabelHeight
     );
 
     totalTimeLabel.setBounds(
         waveformArea.getRight() - 60,
-        waveformArea.getBottom() + 10 + sliderHeight + 5,
+        waveformArea.getBottom() + 50+ sliderHeight + 5,
         60,
         timeLabelHeight
     );
+	int markerX = getWidth() - 220;
+    int markerY=25;
+
+	markerLabel.setBounds(markerX, markerY,200, 30);
+    addMarkerButton.setBounds(markerX, markerY + 50, 200, 20);
+    deleteMarkerButton.setBounds(markerX, markerY + 70, 200, 20);
+    markerListBox.setBounds(markerX, markerY + 95, 200, 200);
 }
+
 void PlayerGui::setLoopStart()
 {
     if (!fileLoaded) return;
@@ -217,7 +255,6 @@ void PlayerGui::setLoopStart()
     {
         abLoopEnabled = true;
         playerAudio.setLooping(true);
-
     }
 
     repaint();
@@ -229,10 +266,12 @@ void PlayerGui::setLoopEnd()
 
     loopEndTime = playerAudio.getPlaybackTime();
     loopEndSet = true;
+
     if (loopStartSet && loopEndTime <= loopStartTime)
     {
         std::swap(loopStartTime, loopEndTime);
     }
+
     if (loopStartSet && loopEndSet)
     {
         abLoopEnabled = true;
@@ -252,6 +291,88 @@ void PlayerGui::clearLoopMarkers()
 
     repaint();
 }
+
+
+
+void PlayerGui::addMarker()
+{
+    if (!fileLoaded) return;
+
+    double currentTime = playerAudio.getPlaybackTime();
+    playerAudio.addMarker(currentTime);
+
+    markerListBox.updateContent();
+    repaint();
+}
+
+void PlayerGui::deleteSelectedMarker()
+{
+    if (selectedMarkerRow >= 0 && selectedMarkerRow < playerAudio.getMarkers().size())
+    {
+        playerAudio.removeMarker(selectedMarkerRow);
+        selectedMarkerRow = -1;
+        markerListBox.updateContent();
+        repaint();
+    }
+}
+
+void PlayerGui::jumpToMarker(int markerIndex)
+{
+    if (markerIndex >= 0 && markerIndex < playerAudio.getMarkers().size())
+    {
+        const auto& markers = playerAudio.getMarkers();
+        playerAudio.setPosition(markers[markerIndex].timestamp);
+        repaint();
+    }
+}
+
+
+
+int PlayerGui::getNumRows()
+{
+    return static_cast<int>(playerAudio.getMarkers().size());
+}
+
+void PlayerGui::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected)
+{
+    const auto& markers = playerAudio.getMarkers();
+
+    if (rowNumber < 0 || rowNumber >= markers.size())
+        return;
+
+    if (rowIsSelected)
+        g.fillAll(juce::Colours::lightblue);
+    else
+        g.fillAll(juce::Colours::white);
+
+    g.setColour(juce::Colours::black);
+    g.setFont(14.0f);
+
+    g.drawText(markers[rowNumber].getDisplayString(), 5, 0, width - 10, height,
+        juce::Justification::centredLeft, true);
+}
+
+void PlayerGui::listBoxItemClicked(int row, const juce::MouseEvent&)
+{
+    selectedMarkerRow = row;
+    jumpToMarker(row);
+}
+
+void PlayerGui::deleteKeyPressed(int lastRowSelected)
+{
+    selectedMarkerRow = lastRowSelected;
+    deleteSelectedMarker();
+}
+
+void PlayerGui::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    if (source == &playerAudio)
+    {
+        markerListBox.updateContent();
+        repaint();
+    }
+}
+
 
 void PlayerGui::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
@@ -283,6 +404,7 @@ void PlayerGui::timerCallback()
     {
         double currentTime = playerAudio.getPlaybackTime();
         double duration = playerAudio.getTrackDuration();
+
         if (abLoopEnabled && loopStartSet && loopEndSet && currentTime >= loopEndTime)
         {
             playerAudio.setPosition(loopStartTime);
@@ -322,6 +444,8 @@ void PlayerGui::buttonClicked(juce::Button* button)
                     thumbnail.setSource(new juce::FileInputSource(file));
                     fileLoaded = true;
                     clearLoopMarkers();
+                    playerAudio.removeAllMarkers();
+                    markerListBox.updateContent();
                     playPauseButton.setButtonText("Play");
 
                     double duration = playerAudio.getTrackDuration();
@@ -401,16 +525,23 @@ void PlayerGui::buttonClicked(juce::Button* button)
     else if (button == &clearLoopButton)
     {
         clearLoopMarkers();
-    } 
+    }
     else if (button == &forwardButton)
     {
         playerAudio.increment(10.0);
     }
     else if (button == &backwardButton)
     {
-        playerAudio.decrement(10.0); 
+        playerAudio.decrement(10.0);
     }
-
+    else if (button == &addMarkerButton)
+    {
+        addMarker();
+    }
+    else if (button == &deleteMarkerButton)
+    {
+        deleteSelectedMarker();
+    }
 }
 
 void PlayerGui::sliderValueChanged(juce::Slider* slider)
