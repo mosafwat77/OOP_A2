@@ -113,7 +113,7 @@ void PlayerGui::paint(juce::Graphics& g)
 
             g.setColour(juce::Colours::red);
             g.drawLine((float)xPos, (float)waveformArea.getY(),
-                (float)xPos, (float)waveformArea.getBottom(), 2.0f);
+                (float)xPos, (float)waveformArea.getBottom()-26, 2.0f);
         }
 
         if (loopStartSet)
@@ -126,7 +126,7 @@ void PlayerGui::paint(juce::Graphics& g)
 
                 g.setColour(juce::Colours::green);
                 g.drawLine((float)markerX, (float)waveformArea.getY(),
-                    (float)markerX, (float)waveformArea.getBottom(), 3.0f);
+                    (float)markerX, (float)waveformArea.getBottom()-26, 3.0f);
             }
         }
 
@@ -140,7 +140,7 @@ void PlayerGui::paint(juce::Graphics& g)
 
                 g.setColour(juce::Colours::orange);
                 g.drawLine((float)markerX, (float)waveformArea.getY(),
-                    (float)markerX, (float)waveformArea.getBottom(), 3.0f);
+                    (float)markerX, (float)waveformArea.getBottom()-26, 3.0f);
             }
         }
 
@@ -156,7 +156,7 @@ void PlayerGui::paint(juce::Graphics& g)
                 g.fillEllipse((float)markerX - 3.0f, (float)waveformArea.getY() + 5.0f, 6.0f, 6.0f);
 
                 g.drawLine((float)markerX, (float)waveformArea.getY() + 11.0f,
-                    (float)markerX, (float)waveformArea.getBottom(), 1.0f);
+                    (float)markerX, (float)waveformArea.getBottom()-26, 1.0f);
             }
         }
     }
