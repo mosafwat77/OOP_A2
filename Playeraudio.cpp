@@ -1,7 +1,7 @@
 #include "Playeraudio.h"
 
 Playeraudio::Playeraudio() : resampleSource(&transportSource, false, 2)
-  
+
 {
     formatManager.registerBasicFormats();
     transportSource.setGain(1.0f);
