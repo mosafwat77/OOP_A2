@@ -16,7 +16,7 @@ public:
     void stop();
     void pause();
     void restart();
-    
+
     void setGain(float gain);
     void mute();
     void unmute();
@@ -39,15 +39,13 @@ public:
     juce::AudioFormatManager& getFormatManager() { return formatManager; }
 
     void setSpeed(double ratio);
+    float getCurrentGain() const { return muted ? lastGain : transportSource.getGain(); }
 
 private:
     juce::AudioFormatManager formatManager;
     juce::AudioTransportSource transportSource;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
-    juce::ResamplingAudioSource resampleSource{ &transportSource, false, 2 };
-
-
-    float lastVolumeBeforeMute = 0.5f;
+    juce::ResamplingAudioSource resampleSource;
 
     bool muted = false;
     bool isLooping = false;

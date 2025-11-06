@@ -3,12 +3,15 @@
 MainComponent::MainComponent()
 {
     addAndMakeVisible(playerGUI);
-    setSize(700, 200);
+    setSize(800, 700);
     setAudioChannels(0, 2);
+
+    loadSession();
 }
 
 MainComponent::~MainComponent()
 {
+    saveSession();
     shutdownAudio();
 }
 
@@ -29,6 +32,15 @@ void MainComponent::releaseResources()
 
 void MainComponent::resized()
 {
-
     playerGUI.setBounds(getLocalBounds().reduced(10));
+}
+
+void MainComponent::saveSession()
+{
+    playerGUI.saveSession();
+}
+
+void MainComponent::loadSession()
+{
+    playerGUI.loadSession();
 }

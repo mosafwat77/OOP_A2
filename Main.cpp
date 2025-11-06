@@ -35,12 +35,16 @@ private:
             setUsingNativeTitleBar(true);
             setResizable(true, true);
             setContentOwned(new MainComponent(), true);
-            centreWithSize(800, 200);
+            centreWithSize(1200, 720);
             setVisible(true);
         }
 
         void closeButtonPressed() override
         {
+            if (auto* mainComp = dynamic_cast<MainComponent*>(getContentComponent()))
+            {
+                mainComp->saveSession();
+            }
             juce::JUCEApplication::getInstance()->systemRequestedQuit();
         }
     };

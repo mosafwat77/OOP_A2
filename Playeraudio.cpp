@@ -1,7 +1,7 @@
 #include "Playeraudio.h"
 
-Playeraudio::Playeraudio() : resampleSource(&transportSource, false, 2)
-  
+Playeraudio::Playeraudio()
+    : resampleSource(&transportSource, false, 2)
 {
     formatManager.registerBasicFormats();
     transportSource.setGain(1.0f);
@@ -22,14 +22,12 @@ void Playeraudio::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 void Playeraudio::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
     resampleSource.getNextAudioBlock(bufferToFill);
-
 }
 
 void Playeraudio::releaseResources()
 {
     resampleSource.releaseResources();
     transportSource.releaseResources();
-
 }
 
 void Playeraudio::loadFile(const juce::File& audioFile)
